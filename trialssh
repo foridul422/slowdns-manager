@@ -1,0 +1,53 @@
+#!/bin/bash
+# ====================================================================
+# Script: trialssh - Generate 24-Hour Free Trial User
+# ====================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+PUBKEY="58a0eeb51c71ad9fe39997ded7cf4e1f9700d497edd47af5c2c42a66611bc34c"
+NS1="dns.foridul.pp.ua"
+NS2="dns-sg.foridul.pp.ua"
+
+# Generate random username and password
+RAND_NUM=$((1000 + RANDOM % 9000))
+USERNAME="trial$RAND_NUM"
+PASSWORD=$((1000 + RANDOM % 9000))
+EXPIRES_DATE=$(date -d "+1 day" +"%Y-%m-%d")
+CREATED_DATE=$(date +"%Y-%m-%d")
+
+useradd -e "$EXPIRES_DATE" -s /bin/false -M "$USERNAME"
+echo "$USERNAME:$PASSWORD" | chpasswd
+
+mkdir -p /etc/slowdns/users
+cat > "/etc/slowdns/users/$USERNAME.conf" <<EOF
+USERNAME="$USERNAME"
+PASSWORD="$PASSWORD"
+CREATED="$CREATED_DATE"
+EXPIRES="$EXPIRES_DATE"
+MAX_LOGIN="1"
+EOF
+
+clear
+echo -e "${CYAN}====================================================${NC}"
+echo -e "         ${GREEN}24-HOUR TRIAL ACCOUNT GENERATED!${NC}"
+echo -e "${CYAN}====================================================${NC}"
+echo -e " ${YELLOW}Username${NC}        : ${GREEN}$USERNAME${NC}"
+echo -e " ${YELLOW}Password${NC}        : ${GREEN}$PASSWORD${NC}"
+echo -e " ${YELLOW}Validity${NC}        : ${RED}24 Hours ($EXPIRES_DATE)${NC}"
+echo -e "${CYAN}----------------------------------------------------${NC}"
+echo -e "           ${PURPLE}SLOWDNS CONNECTION DETAILS${NC}"
+echo -e "${CYAN}----------------------------------------------------${NC}"
+echo -e " ${BLUE}NameServer (NS)${NC} : ${GREEN}$NS1${NC} / ${GREEN}$NS2${NC}"
+echo -e " ${BLUE}Public Key${NC}      : ${GREEN}$PUBKEY${NC}"
+echo -e " ${BLUE}DNS Resolver${NC}    : 8.8.8.8"
+echo -e " ${BLUE}SSH Host${NC}        : 127.0.0.1"
+echo -e " ${BLUE}SSH Port${NC}        : 22"
+echo -e " ${BLUE}BadVPN UDPGW${NC}    : 7300"
+echo -e "${CYAN}====================================================${NC}"

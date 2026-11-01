@@ -1,0 +1,59 @@
+#!/bin/bash
+# ====================================================================
+# Script: userssh - List All SSH/SlowDNS Accounts
+# ====================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+clear
+echo -e "${CYAN}======================================================================${NC}"
+echo -e "                   ${GREEN}LIST OF ALL SSH / SLOWDNS ACCOUNTS${NC}"
+echo -e "${CYAN}======================================================================${NC}"
+printf "%-18s %-14s %-15s %-10s\n" "USERNAME" "STATUS" "EXPIRES ON" "LIMIT"
+echo -e "${CYAN}----------------------------------------------------------------------${NC}"
+
+TODAY=$(date +%s)
+COUNT=0
+
+# Iterate through users with /bin/false shell
+while IFS=: read -r user pass uid gid comment home shell; do
+    if [ "$shell" = "/bin/false" ] || [ "$shell" = "/usr/sbin/nologin" ]; then
+        # Skip system daemon accounts
+        if [ "$uid" -lt 1000 ] && [ "$user" != "vpn" ]; then
+            continue
+        fi
+
+        COUNT=$((COUNT + 1))
+        
+        # Read expiration
+        EXP_RAW=$(chage -l "$user" 2>/dev/null | grep "Account expires" | awk -F": " '{print $2}')
+        LIMIT="1"
+        if [ -f "/etc/slowdns/users/$user.conf" ]; then
+            LIMIT=$(grep "MAX_LOGIN=" "/etc/slowdns/users/$user.conf" | cut -d'"' -f2)
+            [ -z "$LIMIT" ] && LIMIT="1"
+        fi
+
+        if [ "$EXP_RAW" = "never" ] || [ -z "$EXP_RAW" ]; then
+            STATUS="${GREEN}Active${NC}"
+            EXP_DATE="Never"
+        else
+            EXP_SEC=$(date -d "$EXP_RAW" +%s 2>/dev/null)
+            EXP_DATE=$(date -d "$EXP_RAW" +"%Y-%m-%d" 2>/dev/null)
+            if [ -n "$EXP_SEC" ] && [ "$EXP_SEC" -lt "$TODAY" ]; then
+                STATUS="${RED}Expired${NC}"
+            else
+                STATUS="${GREEN}Active${NC}"
+            fi
+        fi
+
+        printf "%-18s %-23b %-15s %-10s\n" "$user" "$STATUS" "$EXP_DATE" "${LIMIT} Dev"
+    fi
+done < /etc/passwd
+
+echo -e "${CYAN}----------------------------------------------------------------------${NC}"
+echo -e " Total Accounts Found: ${YELLOW}$COUNT${NC}"
+echo -e "${CYAN}======================================================================${NC}"

@@ -1,0 +1,105 @@
+#!/bin/bash
+# ====================================================================
+# Script: menu - Interactive SSH & SlowDNS Terminal Manager
+# ====================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+clear
+# Get system info
+OS=$(grep -oP 'PRETTY_NAME="\K[^"]+' /etc/os-release 2>/dev/null || uname -s)
+RAM_USED=$(free -m | awk '/Mem:/ {print $3}')
+RAM_TOTAL=$(free -m | awk '/Mem:/ {print $2}')
+UPTIME=$(uptime -p | sed 's/up //')
+MYIP=$(curl -s ifconfig.me || echo "104.207.76.61")
+
+# Service statuses
+check_svc() {
+    if systemctl is-active --quiet "$1"; then
+        echo -e "${GREEN}RUNNING${NC}"
+    else
+        echo -e "${RED}STOPPED${NC}"
+    fi
+}
+
+SLOWDNS_STAT=$(check_svc slowdns-main)
+HAPROXY_STAT=$(check_svc haproxy)
+BADVPN_STAT=$(check_svc badvpn-udpgw)
+XRAY_STAT=$(check_svc xray)
+XUI_STAT=$(check_svc x-ui)
+
+echo -e "${CYAN}======================================================================${NC}"
+echo -e "              ${GREEN}SLOWDNS & SSH MULTI-PROTOCOL MANAGER${NC}"
+echo -e "${CYAN}======================================================================${NC}"
+echo -e " ${YELLOW}OS${NC}         : $OS"
+echo -e " ${YELLOW}Server IP${NC}  : ${GREEN}$MYIP${NC}"
+echo -e " ${YELLOW}RAM Usage${NC}  : ${RAM_USED}MB / ${RAM_TOTAL}MB"
+echo -e " ${YELLOW}Uptime${NC}     : $UPTIME"
+echo -e "${CYAN}----------------------------------------------------------------------${NC}"
+echo -e " ${BLUE}SlowDNS (dnstt)${NC}  : $SLOWDNS_STAT    ${BLUE}HAProxy Mux${NC}   : $HAPROXY_STAT"
+echo -e " ${BLUE}BadVPN (UDPGW)${NC}   : $BADVPN_STAT    ${BLUE}Xray Core${NC}     : $XRAY_STAT"
+echo -e " ${BLUE}3X-UI Panel${NC}      : $XUI_STAT"
+echo -e "${CYAN}======================================================================${NC}"
+echo -e "                     ${YELLOW}SSH / SLOWDNS USER MENU${NC}"
+echo -e "${CYAN}----------------------------------------------------------------------${NC}"
+echo -e " ${GREEN}[1]${NC} Create New SSH User          ${GREEN}[5]${NC} List All Accounts"
+echo -e " ${GREEN}[2]${NC} Create 24H Trial User        ${GREEN}[6]${NC} Check Online Users"
+echo -e " ${GREEN}[3]${NC} Renew User Validity          ${GREEN}[7]${NC} View SlowDNS Keys & Details"
+echo -e " ${GREEN}[4]${NC} Delete SSH User              ${GREEN}[8]${NC} Restart All Services"
+echo -e "                                  ${RED}[0]${NC} Exit Menu"
+echo -e "${CYAN}======================================================================${NC}"
+read -p " Select option [0-8]: " OPTION
+
+case $OPTION in
+    1)
+        /usr/local/bin/addssh
+        ;;
+    2)
+        /usr/local/bin/trialssh
+        ;;
+    3)
+        /usr/local/bin/renewssh
+        ;;
+    4)
+        /usr/local/bin/delssh
+        ;;
+    5)
+        /usr/local/bin/userssh
+        ;;
+    6)
+        /usr/local/bin/onlinessh
+        ;;
+    7)
+        clear
+        echo -e "${CYAN}====================================================${NC}"
+        echo -e "             ${PURPLE}SLOWDNS SERVER DETAILS${NC}"
+        echo -e "${CYAN}====================================================${NC}"
+        echo -e " ${BLUE}NameServer 1 (NS)${NC}  : ${GREEN}dns.foridul.pp.ua${NC}"
+        echo -e " ${BLUE}NameServer 2 (NS)${NC}  : ${GREEN}dns-sg.foridul.pp.ua${NC}"
+        echo -e " ${BLUE}Public Key${NC}         : ${GREEN}58a0eeb51c71ad9fe39997ded7cf4e1f9700d497edd47af5c2c42a66611bc34c${NC}"
+        echo -e " ${BLUE}DNS Resolver${NC}       : 8.8.8.8"
+        echo -e " ${BLUE}SSH Port${NC}           : 22"
+        echo -e " ${BLUE}BadVPN UDPGW${NC}       : 7300"
+        echo -e " ${BLUE}V2Ray Protocol${NC}     : VMess (alterId: 0, RAW/TCP)"
+        echo -e " ${BLUE}V2Ray UUID${NC}         : 60c44ed2-4dd4-43ab-9a66-a0b40623a1d4"
+        echo -e " ${BLUE}3X-UI Panel URL${NC}    : https://sg.foridul.pp.ua:2053/"
+        echo -e "${CYAN}====================================================${NC}"
+        ;;
+    8)
+        echo -e "${YELLOW}[*] Restarting services...${NC}"
+        systemctl restart slowdns-main slowdns-sg dnsdist haproxy badvpn-udpgw xray
+        echo -e "${GREEN}[+] All services restarted successfully!${NC}"
+        ;;
+    0)
+        exit 0
+        ;;
+    *)
+        echo -e "${RED}[!] Invalid option!${NC}"
+        ;;
+esac

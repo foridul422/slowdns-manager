@@ -1,0 +1,35 @@
+#!/bin/bash
+# ====================================================================
+# Script: delssh - Delete SSH / SlowDNS Account
+# ====================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+clear
+echo -e "${CYAN}====================================================${NC}"
+echo -e "             ${RED}DELETE SSH / SLOWDNS ACCOUNT${NC}"
+echo -e "${CYAN}====================================================${NC}"
+
+USERNAME="$1"
+if [ -z "$USERNAME" ]; then
+    read -p " Enter Username to Delete : " USERNAME
+fi
+
+if ! id "$USERNAME" &>/dev/null; then
+    echo -e "${RED}[!] User '$USERNAME' does not exist!${NC}"
+    exit 1
+fi
+
+# Kill any active sessions
+pkill -u "$USERNAME" &>/dev/null
+
+# Delete user account
+userdel -f "$USERNAME" &>/dev/null
+rm -f "/etc/slowdns/users/$USERNAME.conf"
+
+echo -e "${GREEN}[+] User '$USERNAME' has been permanently deleted!${NC}"
+echo -e "${CYAN}====================================================${NC}"

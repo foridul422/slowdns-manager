@@ -1,0 +1,42 @@
+#!/bin/bash
+# ====================================================================
+# Script: onlinessh - View Currently Connected Online SSH Users
+# ====================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+clear
+echo -e "${CYAN}====================================================${NC}"
+echo -e "            ${GREEN}ONLINE SSH / SLOWDNS USERS${NC}"
+echo -e "${CYAN}====================================================${NC}"
+printf "%-18s %-12s %-15s\n" "USERNAME" "PID" "ACTIVE SESSIONS"
+echo -e "${CYAN}----------------------------------------------------${NC}"
+
+# Find sshd child processes
+ONLINE_COUNT=0
+declare -A USER_PIDS
+
+while read -r pid user; do
+    if [ -n "$user" ] && [ "$user" != "root" ] && [ "$user" != "sshd" ]; then
+        USER_PIDS["$user"]+="$pid "
+    fi
+done < <(ps -ef | grep 'sshd: ' | grep -v 'sshd: \[priv\]' | awk '{print $2, $1}')
+
+for user in "${!USER_PIDS[@]}"; do
+    pids=(${USER_PIDS["$user"]})
+    count=${#pids[@]}
+    ONLINE_COUNT=$((ONLINE_COUNT + count))
+    printf "%-18s %-12s %-15s\n" "$user" "${pids[0]}" "$count Session(s)"
+done
+
+if [ "$ONLINE_COUNT" -eq 0 ]; then
+    echo -e " ${YELLOW}No client is currently connected.${NC}"
+fi
+
+echo -e "${CYAN}----------------------------------------------------${NC}"
+echo -e " Total Active Sessions: ${GREEN}$ONLINE_COUNT${NC}"
+echo -e "${CYAN}====================================================${NC}"

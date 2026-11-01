@@ -1,0 +1,88 @@
+#!/bin/bash
+# ====================================================================
+# Script: addssh - Create New SSH/SlowDNS Tunnel User (No Shell)
+# ====================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+PUBKEY="58a0eeb51c71ad9fe39997ded7cf4e1f9700d497edd47af5c2c42a66611bc34c"
+NS1="dns.foridul.pp.ua"
+NS2="dns-sg.foridul.pp.ua"
+SERVER_IP="104.207.76.61"
+
+clear
+echo -e "${CYAN}====================================================${NC}"
+echo -e "       ${GREEN}CREATE NEW SSH / SLOWDNS ACCOUNT${NC}"
+echo -e "${CYAN}====================================================${NC}"
+
+# Check arguments or prompt interactively
+USERNAME="$1"
+PASSWORD="$2"
+DAYS="$3"
+MAX_LOGIN="$4"
+
+if [ -z "$USERNAME" ]; then
+    read -p " Enter Username      : " USERNAME
+fi
+
+if id "$USERNAME" &>/dev/null; then
+    echo -e "${RED}[!] User '$USERNAME' already exists! Choose another name.${NC}"
+    exit 1
+fi
+
+if [ -z "$PASSWORD" ]; then
+    read -p " Enter Password      : " PASSWORD
+fi
+
+if [ -z "$DAYS" ]; then
+    read -p " Enter Validity Days : " DAYS
+fi
+
+if [ -z "$MAX_LOGIN" ]; then
+    read -p " Max Multi-Login (e.g. 1 or 2): " MAX_LOGIN
+fi
+[ -z "$MAX_LOGIN" ] && MAX_LOGIN=1
+
+# Calculate expiration date
+EXPIRES_DATE=$(date -d "+$DAYS days" +"%Y-%m-%d")
+CREATED_DATE=$(date +"%Y-%m-%d")
+
+# Create user with /bin/false shell (Restricted: Port forwarding only, no terminal access)
+useradd -e "$EXPIRES_DATE" -s /bin/false -M "$USERNAME"
+echo "$USERNAME:$PASSWORD" | chpasswd
+
+# Save metadata
+mkdir -p /etc/slowdns/users
+cat > "/etc/slowdns/users/$USERNAME.conf" <<EOF
+USERNAME="$USERNAME"
+PASSWORD="$PASSWORD"
+CREATED="$CREATED_DATE"
+EXPIRES="$EXPIRES_DATE"
+MAX_LOGIN="$MAX_LOGIN"
+EOF
+
+clear
+echo -e "${CYAN}====================================================${NC}"
+echo -e "          ${GREEN}SSH / SLOWDNS ACCOUNT CREATED!${NC}"
+echo -e "${CYAN}====================================================${NC}"
+echo -e " ${YELLOW}Username${NC}        : ${GREEN}$USERNAME${NC}"
+echo -e " ${YELLOW}Password${NC}        : ${GREEN}$PASSWORD${NC}"
+echo -e " ${YELLOW}Max Device${NC}      : ${CYAN}$MAX_LOGIN Device(s)${NC}"
+echo -e " ${YELLOW}Created On${NC}      : $CREATED_DATE"
+echo -e " ${YELLOW}Expires On${NC}      : ${RED}$EXPIRES_DATE ($DAYS days)${NC}"
+echo -e "${CYAN}----------------------------------------------------${NC}"
+echo -e "           ${PURPLE}SLOWDNS CONNECTION DETAILS${NC}"
+echo -e "${CYAN}----------------------------------------------------${NC}"
+echo -e " ${BLUE}NameServer (NS)${NC} : ${GREEN}$NS1${NC} / ${GREEN}$NS2${NC}"
+echo -e " ${BLUE}Public Key${NC}      : ${GREEN}$PUBKEY${NC}"
+echo -e " ${BLUE}DNS Resolver${NC}    : 8.8.8.8"
+echo -e " ${BLUE}SSH Host${NC}        : 127.0.0.1"
+echo -e " ${BLUE}SSH Port${NC}        : 22"
+echo -e " ${BLUE}BadVPN UDPGW${NC}    : 7300"
+echo -e "${CYAN}====================================================${NC}"

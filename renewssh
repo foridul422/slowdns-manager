@@ -1,0 +1,46 @@
+#!/bin/bash
+# ====================================================================
+# Script: renewssh - Extend Validity of Existing SSH User
+# ====================================================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+clear
+echo -e "${CYAN}====================================================${NC}"
+echo -e "             ${GREEN}RENEW SSH / SLOWDNS ACCOUNT${NC}"
+echo -e "${CYAN}====================================================${NC}"
+
+USERNAME="$1"
+DAYS="$2"
+
+if [ -z "$USERNAME" ]; then
+    read -p " Enter Username to Renew : " USERNAME
+fi
+
+if ! id "$USERNAME" &>/dev/null; then
+    echo -e "${RED}[!] User '$USERNAME' does not exist!${NC}"
+    exit 1
+fi
+
+if [ -z "$DAYS" ]; then
+    read -p " Enter Additional Days   : " DAYS
+fi
+
+# Calculate new expiration date
+EXPIRES_DATE=$(date -d "+$DAYS days" +"%Y-%m-%d")
+chage -E "$EXPIRES_DATE" "$USERNAME"
+
+# Update config if present
+if [ -f "/etc/slowdns/users/$USERNAME.conf" ]; then
+    sed -i "s/^EXPIRES=.*/EXPIRES=\"$EXPIRES_DATE\"/" "/etc/slowdns/users/$USERNAME.conf"
+fi
+
+echo -e "${CYAN}----------------------------------------------------${NC}"
+echo -e " ${GREEN}[+] Success! Account renewed successfully.${NC}"
+echo -e " ${YELLOW}Username${NC}        : ${GREEN}$USERNAME${NC}"
+echo -e " ${YELLOW}New Expiration${NC}  : ${GREEN}$EXPIRES_DATE${NC}"
+echo -e "${CYAN}====================================================${NC}"

@@ -28,10 +28,10 @@ check_svc() {
     fi
 }
 
-SLOWDNS_STAT=$(check_svc slowdns-main)
+SLOWDNS_STAT=$(check_svc slowdns)
+SSH_STAT=$(check_svc ssh)
 HAPROXY_STAT=$(check_svc haproxy)
 BADVPN_STAT=$(check_svc badvpn-udpgw)
-XRAY_STAT=$(check_svc xray)
 XUI_STAT=$(check_svc x-ui)
 
 echo -e "${CYAN}======================================================================${NC}"
@@ -42,8 +42,8 @@ echo -e " ${YELLOW}Server IP${NC}  : ${GREEN}$MYIP${NC}"
 echo -e " ${YELLOW}RAM Usage${NC}  : ${RAM_USED}MB / ${RAM_TOTAL}MB"
 echo -e " ${YELLOW}Uptime${NC}     : $UPTIME"
 echo -e "${CYAN}----------------------------------------------------------------------${NC}"
-echo -e " ${BLUE}SlowDNS (dnstt)${NC}  : $SLOWDNS_STAT    ${BLUE}HAProxy Mux${NC}   : $HAPROXY_STAT"
-echo -e " ${BLUE}BadVPN (UDPGW)${NC}   : $BADVPN_STAT    ${BLUE}Xray Core${NC}     : $XRAY_STAT"
+echo -e " ${BLUE}SlowDNS (dnstt)${NC}  : $SLOWDNS_STAT    ${BLUE}OpenSSH (Port 22)${NC} : $SSH_STAT"
+echo -e " ${BLUE}BadVPN (UDPGW)${NC}   : $BADVPN_STAT    ${BLUE}HAProxy Mux${NC}       : $HAPROXY_STAT"
 echo -e " ${BLUE}3X-UI Panel${NC}      : $XUI_STAT"
 echo -e "${CYAN}======================================================================${NC}"
 echo -e "                     ${YELLOW}SSH / SLOWDNS USER MENU${NC}"
